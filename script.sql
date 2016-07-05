@@ -1,0 +1,11 @@
+CREATE TABLE listas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE tareas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    descripcion NOT NULL,
+    lista_id INTEGER NOT NULL,
+    FOREIGN KEY (lista_id) REFERENCES listas (id)
+);
