@@ -1,84 +1,57 @@
 #!/usr/bin/python
 
 import sqlite3
-import getopt
+import argparse
 import sys
 
+# Variables globales
+cur = None # Cursor
+
+# Argumentos del programa
+parser = argparse.ArgumentParser()
+parser.add_argument('--crear-tarea', help='Crear una tarea', action='store_true')
+parser.add_argument('--descripcion', help='Agregar o modificar la descripcion de una tarea')
+
+# Operaciones
+def crear_tarea(descripcion, lista_id=1):
+    """ Crear una tarea con descripcion en la lista especificada,
+    si no se especifica se utiliza la lista de tareas sueltas. """
+
+    cur.execute('INSERT INTO tareas (descripcion, lista_id) VALUES (?, ?)', (descripcion, lista_id))
+
+def eliminar_tarea(tarea_id):
+    """ Eliminar una tarea """
+    cur.execute('DELETE FROM tareas WHERE id=?', (tarea_id,))
+
+def actualizar_tarea(tarea_id, descripcion):
+    """ Actualizar descripcion de una tarea """
+    cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (descripcion, tarea_id,))
+
+def mostrar_tarea(tarea_id):
+    """ Mostrar la tarea segun tarea_id """
+    if tarea_id == 0:
+        cur.execute('SELECT id, descripcion FROM tareas')
+    else:
+        cur.execute('SELECT id, descripcion FROM tareas WHERE id=?', (tarea_id,))
+
+    tareas = cur.fetchall()
+    for tarea in tareas:
+        print "%s - %s" % (tarea[0], tarea[1],)
+
 def main():
+
+    global cur
 
     con = sqlite3.connect('tareas.db')
     cur = con.cursor()
 
-    # Errores posibles
-    # Faltan argumentos necesarios
-    # No se dan valores a los argumentos
+    args = parser.parse_args()
 
-    try:
-        opciones, args = getopt.getopt(sys.argv[1:], None, ["crear-tarea",
-            "eliminar-tarea=", "actualizar-tarea=", "descripcion=",
-            "mostrar-tareas="])
-    except getopt.GetoptError, e:
-        if e.opt == 'descripcion':
-            print "Error: Falta descripcion."
-        elif e.opt == 'mostrar-tareas':
-            print "Error: Falta id de la tarea."
-        sys.exit(1)
-
-    crear_tarea = False
-    eliminar_tarea = False
-    actualizar_tarea = False
-    mostrar_tareas = False
-
-    descripcion = ''
-    tarea_id = None
-
-    for opc, val in opciones:
-
-        if opc == '--crear-tarea':
-                crear_tarea = True
-        elif opc == '--eliminar-tarea':
-            eliminar_tarea = True
-            tarea_id = val
-        elif opc == '--actualizar-tarea':
-            actualizar_tarea = True
-            tarea_id = int(val)
-        elif opc == '--descripcion':
-            descripcion = val
-        elif opc == '--mostrar-tareas':
-            mostrar_tareas = True
-            tarea_id = int(val)
-            break
-        else:
-            man()
-            sys.exit(1)
-
-    if crear_tarea:
-        if descripcion == '':
-            print "Error: Falta descripcion."
-            sys.exit(1)
-        else:
-            cur.execute('INSERT INTO tareas (descripcion, lista_id) VALUES (?, 1)', (descripcion,))
-
-    elif eliminar_tarea:
-        cur.execute('DELETE FROM tareas WHERE id=?', (tarea_id,))
-
-    elif actualizar_tarea:
-        cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (descripcion, tarea_id,))
-
-    elif mostrar_tareas:
-
-        if tarea_id == 0:
-            cur.execute('SELECT id, descripcion FROM tareas')
-        else:
-            cur.execute('SELECT id, descripcion FROM tareas WHERE id=?', (tarea_id,))
-
-        tareas = cur.fetchall()
-        for tarea in tareas:
-            print "%s - %s" % (tarea[0], tarea[1],)
+    if args.crear_tarea and args.descripcion:
+        crear_tarea(args.descripcion)
 
     con.commit()
     con.close()
 
 if __name__ == '__main__':
     main()
-    sys.exit(0)
