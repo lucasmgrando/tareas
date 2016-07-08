@@ -8,29 +8,32 @@ import sys
 cur = None # Cursor
 
 # Operaciones
-def crear_tarea(descripcion):
+def crear_tarea(args):
     """ Crear una tarea con descripcion en la lista especificada,
     si no se especifica se utiliza la lista de tareas sueltas. """
 
-    cur.execute('INSERT INTO tareas (descripcion, lista_id) VALUES (?, 1)', (descripcion,))
+    cur.execute('INSERT INTO tareas (descripcion, lista_id) VALUES (?, 1)', (args.descripcion_tarea,))
+    print 'Se agrego una tarea'
 
-def eliminar_tarea(tarea_id):
+def eliminar_tarea(args):
     """ Eliminar una tarea """
 
-    cur.execute('DELETE FROM tareas WHERE id=?', (tarea_id,))
+    cur.execute('DELETE FROM tareas WHERE id=?', (args.tarea_id,))
+    print 'Se elimino la tarea %d' % (args.tarea_id,)
 
-def actualizar_tarea(tarea_id, descripcion):
+def actualizar_tarea(args):
     """ Actualizar descripcion de una tarea """
 
-    cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (descripcion, tarea_id,))
+    cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (args.nueva_descripcion, args.tarea_id,))
+    print 'Se actualizo la tarea %d' % (args.tarea_id,)
 
-def mostrar_tarea(tarea_id):
+def mostrar_tarea(args):
     """ Mostrar una tarea o todas si tarea_id = 0 """
 
-    if tarea_id == 0:
+    if args.tarea_id == 0:
         cur.execute('SELECT id, descripcion FROM tareas')
     else:
-        cur.execute('SELECT id, descripcion FROM tareas WHERE id=?', (tarea_id,))
+        cur.execute('SELECT id, descripcion FROM tareas WHERE id=?', (args.tarea_id,))
 
     tareas = cur.fetchall()
     for tarea in tareas:
@@ -38,10 +41,24 @@ def mostrar_tarea(tarea_id):
 
 # Argumentos del programa
 parser = argparse.ArgumentParser()
-parser.add_argument('-a', help='Crear una tarea')
-parser.add_argument('-d', type=int, help='Eliminar tarea')
-parser.add_argument('-u', type=int, help='Actualizar tarea')
-parser.add_argument('-p', type=int, help='Mostrar tarea')
+subparsers = parser.add_subparsers()
+
+crear_parser = subparsers.add_parser('add')
+crear_parser.add_argument('descripcion_tarea')
+crear_parser.set_defaults(operacion=crear_tarea)
+
+eliminar_parser = subparsers.add_parser('delete')
+eliminar_parser.add_argument('tarea_id', type=int)
+eliminar_parser.set_defaults(operacion=eliminar_tarea)
+
+mostrar_parser = subparsers.add_parser('print')
+mostrar_parser.add_argument('tarea_id', type=int)
+mostrar_parser.set_defaults(operacion=mostrar_tarea)
+
+actualizar_parser = subparsers.add_parser('update')
+actualizar_parser.add_argument('tarea_id', type=int)
+actualizar_parser.add_argument('nueva_descripcion')
+actualizar_parser.set_defaults(operacion=actualizar_tarea)
 
 def main():
 
@@ -52,12 +69,8 @@ def main():
 
     args = parser.parse_args()
 
-    if args.a:
-        crear_tarea(args.a)
-    elif args.d:
-        eliminar_tarea(args.d)
-    elif args.p:
-        mostrar_tarea(args.p)
+    # Ejecutar operacion
+    args.operacion(args)
 
     con.commit()
     con.close()
