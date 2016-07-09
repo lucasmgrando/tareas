@@ -5,7 +5,8 @@ import argparse
 import sys
 
 # Variables globales
-cur = None # Cursor
+cur = None
+con = None
 
 # Operaciones
 def crear_tarea(args):
@@ -13,19 +14,36 @@ def crear_tarea(args):
     si no se especifica se utiliza la lista de tareas sueltas. """
 
     cur.execute('INSERT INTO tareas (descripcion, lista_id) VALUES (?, 1)', (args.descripcion_tarea,))
+    con.commit()
     print 'Se agrego una tarea'
 
 def eliminar_tarea(args):
-    """ Eliminar una tarea """
+    """ Eliminar una tarea si existe """
 
-    cur.execute('DELETE FROM tareas WHERE id=?', (args.tarea_id,))
-    print 'Se elimino la tarea %d' % (args.tarea_id,)
+    cur.execute('SELECT id FROM tareas WHERE id=?', (args.tarea_id,))
+
+    if cur.fetchone() != None:
+
+        cur.execute('DELETE FROM tareas WHERE id=?', (args.tarea_id,))
+        con.commit()
+        print 'Se elimino la tarea %d' % (args.tarea_id,)
+
+    else:
+        print 'No existe la tarea %d' % (args.tarea_id,)
 
 def actualizar_tarea(args):
-    """ Actualizar descripcion de una tarea """
+    """ Actualizar descripcion de una tarea si existe """
 
-    cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (args.nueva_descripcion, args.tarea_id,))
-    print 'Se actualizo la tarea %d' % (args.tarea_id,)
+    cur.execute('SELECT id FROM tareas WHERE id=?', (args.tarea_id,))
+
+    if cur.fetchone() != None:
+
+        cur.execute('UPDATE tareas SET descripcion=? WHERE id=?', (args.nueva_descripcion, args.tarea_id,))
+        con.commit()
+        print 'Se actualizo la tarea %d' % (args.tarea_id,)
+
+    else:
+        print 'No existe la tarea %d' % (args.tarea_id,)
 
 def mostrar_tarea(args):
     """ Mostrar una tarea o todas si tarea_id = 0 """
@@ -62,7 +80,7 @@ actualizar_parser.set_defaults(operacion=actualizar_tarea)
 
 def main():
 
-    global cur
+    global cur, con
 
     con = sqlite3.connect('tareas.db')
     cur = con.cursor()
@@ -72,7 +90,6 @@ def main():
     # Ejecutar operacion
     args.operacion(args)
 
-    con.commit()
     con.close()
 
 if __name__ == '__main__':
