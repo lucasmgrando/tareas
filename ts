@@ -82,8 +82,21 @@ def main():
 
     global cur, con
 
+
+
     con = sqlite3.connect('tareas.db')
     cur = con.cursor()
+
+    # Crear tablas
+    cur.execute('CREATE TABLE IF NOT EXISTS listas (id INTEGER PRIMARY KEY AUTOINCREMENT, \
+        titulo VARCHAR(20) NOT NULL)')
+
+    cur.execute('CREATE TABLE IF NOT EXISTS tareas ( \
+        id INTEGER PRIMARY KEY AUTOINCREMENT, \
+        descripcion NOT NULL, \
+        lista_id INTEGER NOT NULL, \
+        terminada BOOLEAN DEFAULT 0, \
+        FOREIGN KEY (lista_id) REFERENCES listas (id))')
 
     args = parser.parse_args()
 
